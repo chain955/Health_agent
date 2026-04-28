@@ -1,6 +1,6 @@
 """Admin API skeleton — `/admin/api/...`. Full surface lands in PR 8."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 
@@ -23,7 +23,7 @@ async def health(_: Annotated[str, Depends(require_admin)]) -> dict[str, object]
 
 
 @router.get("/config")
-async def get_config(_: Annotated[str, Depends(require_admin)]) -> dict[str, object]:
+async def get_config(_: Annotated[str, Depends(require_admin)]) -> dict[str, Any]:
     async with session_scope() as session:
         repo = ConfigRepo(session)
         return await repo.get_all()

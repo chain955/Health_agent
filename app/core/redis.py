@@ -22,5 +22,5 @@ def get_redis() -> Redis[Any]:
 async def close_redis() -> None:
     global _redis
     if _redis is not None:
-        await _redis.close()
+        await _redis.aclose()  # type: ignore[attr-defined]
     _redis = None

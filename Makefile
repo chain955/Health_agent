@@ -2,7 +2,7 @@ SHELL := /bin/bash
 DEV := docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.dev
 PROD := docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod
 
-.PHONY: help dev prod down logs restart-agent migrate revision shell test lint typecheck format env-dev env-prod
+.PHONY: help dev prod down logs restart-agent migrate revision shell test lint typecheck format env-dev env-prod seed-demo seed-demo-reset
 
 help:
 	@echo "Targets:"
@@ -63,3 +63,9 @@ typecheck:
 format:
 	ruff format .
 	ruff check --fix .
+
+seed-demo:
+	$(DEV) exec agent python -m app.generators.seed_demo
+
+seed-demo-reset:
+	$(DEV) exec agent python -m app.generators.seed_demo --reset

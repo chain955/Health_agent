@@ -28,9 +28,9 @@ async def test_select_tools_returns_k_results(retriever: ToolRetriever) -> None:
 async def test_select_tools_workout_query(retriever: ToolRetriever) -> None:
     results = await retriever.select_tools("сколько я пробежал на этой неделе", k=3)
     names = [s.name for s in results]
-    assert any(
-        n in names for n in ("get_recent_workouts", "get_period_summary")
-    ), f"expected workout/period tool in top-3 but got {names}"
+    assert any(n in names for n in ("get_recent_workouts", "get_period_summary")), (
+        f"expected workout/period tool in top-3 but got {names}"
+    )
 
 
 @pytest.mark.asyncio

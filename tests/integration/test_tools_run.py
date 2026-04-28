@@ -144,9 +144,9 @@ async def test_get_period_summary_overtrained_low_recovery() -> None:
     nv_recovery = nv_data["summary"]["avg_recovery"]
     assert ot_recovery is not None
     assert nv_recovery is not None
-    assert (
-        ot_recovery < nv_recovery
-    ), f"overtrained ({ot_recovery}) should have lower avg recovery than novice ({nv_recovery})"
+    assert ot_recovery < nv_recovery, (
+        f"overtrained ({ot_recovery}) should have lower avg recovery than novice ({nv_recovery})"
+    )
 
 
 @pytest.mark.asyncio
@@ -195,9 +195,9 @@ async def test_get_period_summary_oversleeper_high_sleep() -> None:
     ot_sleep = ot_data["summary"]["avg_sleep_minutes"]
     assert os_sleep is not None
     assert ot_sleep is not None
-    assert (
-        os_sleep > ot_sleep
-    ), f"oversleeper ({os_sleep}) should sleep more than overtrained ({ot_sleep})"
+    assert os_sleep > ot_sleep, (
+        f"oversleeper ({os_sleep}) should sleep more than overtrained ({ot_sleep})"
+    )
 
 
 @pytest.mark.asyncio

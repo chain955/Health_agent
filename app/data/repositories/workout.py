@@ -1,9 +1,12 @@
 """Repository for workouts."""
 
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
+from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,6 +49,24 @@ class WorkoutRepo:
         stmt = pg_insert(Workout).values(rows)
         stmt = stmt.on_conflict_do_nothing(index_elements=["id"])
         await self.session.execute(stmt)
+
+    async def summary(self, user_id: uuid.UUID, since: datetime) -> dict[str, Any]:
+        """SQL-level aggregation of workouts since a given timestamp."""
+        stmt = select(
+            func.count(Workout.id).label("total_workouts"),
+            func.coalesce(func.sum(Workout.distance_meters), 0).label("total_distance_meters"),
+            func.coalesce(func.sum(Workout.duration_seconds), 0).label("total_duration_seconds"),
+        ).where(
+            Workout.user_id == user_id,
+            Workout.start_time >= since,
+        )
+        result = await self.session.execute(stmt)
+        row = result.one()
+        return {
+            "total_workouts": int(row.total_workouts),
+            "total_distance_meters": int(row.total_distance_meters),
+            "total_duration_seconds": int(row.total_duration_seconds),
+        }
 
     async def delete_by_user(self, user_id: uuid.UUID) -> None:
         await self.session.execute(delete(Workout).where(Workout.user_id == user_id))

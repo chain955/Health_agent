@@ -1,9 +1,12 @@
 """Repository for daily_metrics."""
 
+from __future__ import annotations
+
 import uuid
 from datetime import date
+from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -49,6 +52,31 @@ class DailyMetricsRepo:
         }
         stmt = stmt.on_conflict_do_update(constraint="uq_daily_metrics_user_date", set_=update_cols)
         await self.session.execute(stmt)
+
+    async def summary(self, user_id: uuid.UUID, start: date, end: date) -> dict[str, Any]:
+        """SQL-level aggregation of metrics for a date range."""
+        stmt = select(
+            func.avg(DailyMetrics.recovery_score).label("avg_recovery"),
+            func.avg(DailyMetrics.resting_heart_rate).label("avg_resting_hr"),
+            func.avg(DailyMetrics.hrv_rmssd_milli).label("avg_hrv"),
+            func.avg(DailyMetrics.sleep_total_in_bed_time_milli).label("avg_sleep_milli"),
+        ).where(
+            DailyMetrics.user_id == user_id,
+            DailyMetrics.iso_date >= start,
+            DailyMetrics.iso_date <= end,
+        )
+        result = await self.session.execute(stmt)
+        row = result.one()
+        avg_sleep_milli = row.avg_sleep_milli
+        avg_sleep_minutes: float | None = None
+        if avg_sleep_milli is not None:
+            avg_sleep_minutes = float(avg_sleep_milli) / 60_000.0
+        return {
+            "avg_recovery": float(row.avg_recovery) if row.avg_recovery is not None else None,
+            "avg_resting_hr": float(row.avg_resting_hr) if row.avg_resting_hr is not None else None,
+            "avg_hrv": float(row.avg_hrv) if row.avg_hrv is not None else None,
+            "avg_sleep_minutes": avg_sleep_minutes,
+        }
 
     async def delete_by_user(self, user_id: uuid.UUID) -> None:
         await self.session.execute(delete(DailyMetrics).where(DailyMetrics.user_id == user_id))

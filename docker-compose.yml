@@ -1,0 +1,74 @@
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: health-agent:local
+    container_name: health-agent
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-health}
+      POSTGRES_USER: ${POSTGRES_USER:-health}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-health}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: ${REDIS_DB:-0}
+      LLM_BACKEND: ${LLM_BACKEND:-mock}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434}
+      LLM_MODEL: ${LLM_MODEL:-llama3.1:8b}
+      EMBEDDINGS_BACKEND: ${EMBEDDINGS_BACKEND:-mock}
+      EMBEDDINGS_BASE_URL: ${EMBEDDINGS_BASE_URL:-http://host.docker.internal:11434}
+      EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL:-nomic-embed-text-v2-moe}
+      EMBEDDINGS_DIM: ${EMBEDDINGS_DIM:-768}
+      ADMIN_LOGIN: ${ADMIN_LOGIN:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change_me}
+      CHAT_API_KEY: ${CHAT_API_KEY:-dev_chat_api_key_change_me}
+      ALERTS_WEBHOOK_URL: ${ALERTS_WEBHOOK_URL:-}
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-24}
+      LOG_RETENTION_DAYS: ${LOG_RETENTION_DAYS:-30}
+      CONTEXT_HISTORY_PAIRS: ${CONTEXT_HISTORY_PAIRS:-10}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - health_net
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: health-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-health}
+      POSTGRES_USER: ${POSTGRES_USER:-health}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-health}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-health} -d ${POSTGRES_DB:-health}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - health_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: health-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - health_net
+
+networks:
+  health_net:
+    driver: bridge

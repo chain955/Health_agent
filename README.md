@@ -54,6 +54,29 @@ chat / admin / testchat surfaces land in later PRs.
 `config_active` table in Postgres is the source of truth — see spec 15.1.
 Changes via the admin UI require an agent restart to take effect.
 
+### LLM / Embeddings backend selection
+
+Set `LLM_BACKEND` and `EMBEDDINGS_BACKEND` to choose the implementation:
+
+| Value | Description |
+|---|---|
+| `mock` (default) | Deterministic mock — no network calls, safe for CI. |
+| `ollama` | Ollama native API (`/api/chat`, `/api/embeddings`). |
+| `vllm` / `tei` / `infinity` | Planned; currently falls back to mock. |
+
+When using `ollama`, configure these variables (in `.env` or admin):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `OLLAMA_BASE_URL` | `http://ollama:11434` | Ollama server address. |
+| `OLLAMA_LLM_MODEL` | `llama3.1:8b` | Chat model name. |
+| `OLLAMA_EMBED_MODEL` | `nomic-embed-text-v2-moe` | Embeddings model name. |
+| `OLLAMA_TIMEOUT_SECONDS` | `30` | HTTP request timeout. |
+| `EMBEDDINGS_DIM` | `768` | Vector dimensionality (shared across backends). |
+
+Ollama must be running externally (not in this project's docker-compose).
+See spec section 19.3 for network topology.
+
 ## Project layout
 
 ```

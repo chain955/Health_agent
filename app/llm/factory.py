@@ -3,6 +3,8 @@
 from app.config import Settings, get_settings
 from app.llm.base import EmbeddingsClient, LLMClient
 from app.llm.mock import MockEmbeddingsClient, MockLLMClient
+from app.llm.ollama import OllamaLLMClient
+from app.llm.ollama_embeddings import OllamaEmbeddingsClient
 
 
 def build_llm_client(settings: Settings | None = None) -> LLMClient:
@@ -10,9 +12,14 @@ def build_llm_client(settings: Settings | None = None) -> LLMClient:
     backend = settings.llm_backend
     if backend == "mock":
         return MockLLMClient(model=settings.llm_model)
-    if backend in {"ollama", "vllm"}:
-        # OpenAI-compatible / Ollama implementations land in PR 3.
-        # For now mock falls back so PR 1 is self-contained.
+    if backend == "ollama":
+        return OllamaLLMClient(
+            base_url=settings.ollama_base_url,
+            model=settings.ollama_llm_model,
+            timeout_seconds=settings.ollama_timeout_seconds,
+        )
+    if backend == "vllm":
+        # OpenAI-compatible client lands in a later PR.
         return MockLLMClient(model=settings.llm_model)
     raise ValueError(f"unknown llm backend: {backend}")
 
@@ -22,6 +29,14 @@ def build_embeddings_client(settings: Settings | None = None) -> EmbeddingsClien
     backend = settings.embeddings_backend
     if backend == "mock":
         return MockEmbeddingsClient(dim=settings.embeddings_dim, model=settings.embeddings_model)
-    if backend in {"ollama", "tei", "infinity"}:
+    if backend == "ollama":
+        return OllamaEmbeddingsClient(
+            base_url=settings.ollama_base_url,
+            model=settings.ollama_embed_model,
+            dim=settings.embeddings_dim,
+            timeout_seconds=settings.ollama_timeout_seconds,
+        )
+    if backend in {"tei", "infinity"}:
+        # TEI / Infinity clients land in a later PR.
         return MockEmbeddingsClient(dim=settings.embeddings_dim, model=settings.embeddings_model)
     raise ValueError(f"unknown embeddings backend: {backend}")

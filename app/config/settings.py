@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     embeddings_model: str = "nomic-embed-text-v2-moe"
     embeddings_dim: int = 768
 
+    ollama_base_url: str = "http://ollama:11434"
+    ollama_llm_model: str = "llama3.1:8b"
+    ollama_embed_model: str = "nomic-embed-text-v2-moe"
+    ollama_timeout_seconds: int = 30
+
     postgres_host: str = "postgres"
     postgres_port: int = 5432
     postgres_db: str = "health"
